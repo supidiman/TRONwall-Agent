@@ -4,7 +4,7 @@ import requests
 
 # WAF sunucusunun adresi
 # WAF yazan arkadaşın server.py'yi hangi portta çalıştırıyorsa onu yazın.
-WAF_BASE_URL = "http://127.0.0.1:8000"
+WAF_BASE_URL = "http://127.0.0.1:5000"
 
 # Normal istek gidecek path'ler
 NORMAL_PATHS = [
