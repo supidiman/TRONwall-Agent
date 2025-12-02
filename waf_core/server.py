@@ -1,14 +1,16 @@
 from flask import Flask, request
 import datetime
 
-app = Flask(__name__)
+app = Flask(_name_)
 
 @app.route('/')
 def home():
+    # Zamanı ve IP'yi al
     zaman = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     ip_adresi = request.remote_addr
     basliklar = dict(request.headers)
 
+    # Terminale süslü log bas
     print(f"\n[LOG - {zaman}]")
     print(f"⚡ Gelen İstek IP: {ip_adresi}")
     print(f"📋 Headers: {basliklar}")
@@ -16,18 +18,6 @@ def home():
 
     return "TRONwall Active - WAF Core Online 🛡️"
 
-@app.route('/search')
-def search():
-    q = request.args.get("q", "")
-    zaman = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    ip_adresi = request.remote_addr
-
-    print(f"\n[SEARCH - {zaman}]")
-    print(f"🔍 Arama Sorgusu: {q}")
-    print(f"📌 IP: {ip_adresi}")
-    print("-" * 50)
-
-    return f"Aranan ifade: {q}"
-
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=8000)
+if _name_ == '_main_':
+    # Sunucuyu başlat
+    app.run(host='0.0.0.0', port=5000)
