@@ -1,80 +1,146 @@
-import time
 import random
+import time
+import threading
+from urllib.parse import urlencode
+
 import requests
 
-# WAF sunucusunun adresi
-# WAF yazan arkadaşın server.py'yi hangi portta çalıştırıyorsa onu yazın.
-WAF_BASE_URL = "http://127.0.0.1:5000"
+# ================== AYARLAR ==================
+BASE_URL = "http://localhost:8000"  # WAF geliştiricisinin server.py portuna göre ayarla
+RPS = 8  # saniyede istek sayısı (5–10 arası önerilmişti)
+DURATION_SECONDS = 60  # toplam test süresi
+MALICIOUS_RATIO = 0.2  # %20 zararlı trafik
+# ============================================
 
-# Normal istek gidecek path'ler
+
 NORMAL_PATHS = [
-    "/",
-    "/home",
-    "/about",
-    "/products",
+    "/", "/home", "/about", "/products", "/contact"
 ]
 
-# Zararlı payload'lar (XSS ve basit SQLi denemeleri)
-ATTACK_PAYLOADS = [
+MALICIOUS_PAYLOADS = [
     "<script>alert(1)</script>",
-    "<img src=x onerror=alert('xss')>",
-    "' OR 1=1 --",
-    "\" OR \"1\"=\"1",
+    "<script>confirm('XSS')</script>",
+    "\"><script>alert('xss')</script>",
+    "<img src=x onerror=alert(1)>",
+    "<svg onload=alert(1)>",
 ]
 
-def send_normal_request(session: requests.Session):
-    """Masum bir GET isteği gönderir."""
+HEADERS_NORMAL = [
+    {"User-Agent": "Mozilla/5.0"},
+    {"User-Agent": "Chrome/120.0"},
+    {"User-Agent": "Safari/17.0"},
+]
+
+HEADERS_MALICIOUS = [
+    {"User-Agent": "sqlmap/1.0"},
+    {"User-Agent": "evil-bot/2.1"},
+]
+
+
+def build_normal_request():
     path = random.choice(NORMAL_PATHS)
-    url = WAF_BASE_URL + path
+    url = BASE_URL + path
+
+    params = {
+        "page": random.choice(["1", "2", "3"]),
+        "q": random.choice(["tron", "blog", "docs", "products"]),
+    }
+
+    headers = random.choice(HEADERS_NORMAL)
+
+    return {
+        "method": "GET",
+        "url": url,
+        "params": params,
+        "headers": headers,
+    }
+
+
+def build_malicious_request():
+    path = random.choice(NORMAL_PATHS)
+    url = BASE_URL + path
+
+    payload = random.choice(MALICIOUS_PAYLOADS)
+
+    # XSS payload query string içinde
+    params = {
+        "search": payload,
+        "debug": "true",
+    }
+
+    headers = random.choice(HEADERS_MALICIOUS)
+
+    return {
+        "method": "GET",
+        "url": url,
+        "params": params,
+        "headers": headers,
+    }
+
+
+def send_request(session, request_data, index):
+    method = request_data["method"]
+    url = request_data["url"]
+    params = request_data["params"]
+    headers = request_data["headers"]
 
     try:
-        resp = session.get(url, timeout=3)
-        print(f"[NORMAL] {url} -> {resp.status_code}")
+        if method == "GET":
+            resp = session.get(url, params=params, headers=headers, timeout=3)
+        else:
+            resp = session.post(url, data=params, headers=headers, timeout=3)
+
+        # Kısa log
+        query = urlencode(params)
+        print(f"[{index}] {method} {url}?{query} -> {resp.status_code}")
+
     except Exception as e:
-        print(f"[NORMAL][HATA] {url} -> {e}")
+        print(f"[HATA] İstek gönderilemedi: {e}")
 
 
-def send_attack_request(session: requests.Session):
-    """Zararlı bir payload içeren isteği gönderir."""
-    path = "/search"
-    url = WAF_BASE_URL + path
-
-    payload = random.choice(ATTACK_PAYLOADS)
-    params = {"q": payload}
-
-    try:
-        resp = session.get(url, params=params, timeout=3)
-        print(f"[ATTACK] {url}?q={payload} -> {resp.status_code}")
-    except Exception as e:
-        print(f"[ATTACK][HATA] {url} -> {e}")
-
-
-def main(total_requests: int = 100, rps: float = 5.0, attack_ratio: float = 0.2):
+def traffic_loop():
     """
-    total_requests : Toplam kaç istek atılsın
-    rps            : Saniyedeki istek sayısı (requests per second)
-    attack_ratio   : Saldırı oranı (0.2 -> %20 saldırı, %80 normal)
+    Bu fonksiyon, verilen süre boyunca her saniye RPS kadar istek atar.
+    %80 normal, %20 zararlı olacak şekilde dağıtır.
     """
-    delay = 1.0 / rps  # iki istek arasındaki bekleme süresi (saniye)
-
+    end_time = time.time() + DURATION_SECONDS
     session = requests.Session()
 
-    print(f"Başlıyor: toplam={total_requests}, rps={rps}, attack_ratio={attack_ratio}")
-    for i in range(1, total_requests + 1):
-        is_attack = random.random() < attack_ratio
+    request_index = 0
 
-        if is_attack:
-            send_attack_request(session)
-        else:
-            send_normal_request(session)
+    while time.time() < end_time:
+        start = time.time()
 
-        # Çok hızlı gitmemek için uyku
-        time.sleep(delay)
+        threads = []
 
-    print("Trafik üretimi bitti.")
+        for _ in range(RPS):
+            request_index += 1
+
+            # Zararlı mı, normal mi?
+            if random.random() < MALICIOUS_RATIO:
+                req_data = build_malicious_request()
+            else:
+                req_data = build_normal_request()
+
+            t = threading.Thread(
+                target=send_request, args=(session, req_data, request_index)
+            )
+            t.start()
+            threads.append(t)
+
+        # O saniyedeki tüm istekler bitsin
+        for t in threads:
+            t.join()
+
+        # 1 saniye aralığını korumaya çalış
+        elapsed = time.time() - start
+        sleep_time = max(0, 1.0 - elapsed)
+        time.sleep(sleep_time)
+
+    print("Test tamamlandı.")
 
 
 if __name__ == "__main__":
-    # Varsayılan: 100 istek, saniyede 5 istek, %20 saldırı
-    main()
-
+    print(f"TRONwall traffic generator başlıyor...")
+    print(f"Target: {BASE_URL}, RPS={RPS}, süre={DURATION_SECONDS} sn, kötü oran={MALICIOUS_RATIO*100:.0f}%")
+    traffic_loop()
