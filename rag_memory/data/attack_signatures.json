@@ -1,0 +1,86 @@
+[
+    {
+        "id": "A001",
+        "name": "SQL Injection (Critical)",
+        "description": "Veritabanı manipülasyon girişimi.",
+        "risk_level": "CRITICAL",
+        "regex_patterns": [
+            "(?i)(\\bunion\\s+select\\b)",
+            "(?i)(select\\s+.*\\s+from)",
+            "(?i)(\\bor\\s+['\"]?1['\"]?\\s*=\\s*['\"]?1)",
+            "(?i)(--\\s*$)",
+            "(?i)(exec\\s*\\(\\s*s@)",
+            "(?i)(information_schema)"
+        ],
+        "rule_template": {
+            "action": "block_ip",
+            "reason": "SQL Injection detected via Regex"
+        }
+    },
+    {
+        "id": "A002",
+        "name": "Cross-Site Scripting - XSS (Reflected)",
+        "description": "Zararlı JavaScript kodu çalıştırma girişimi.",
+        "risk_level": "HIGH",
+        "regex_patterns": [
+            "(?i)(<script.*?>.*?<\\/script>)",
+            "(?i)(javascript:)",
+            "(?i)(onerror\\s*=)",
+            "(?i)(onload\\s*=)",
+            "(?i)(alert\\s*\\()",
+            "(?i)(<img\\s+src=x)"
+        ],
+        "rule_template": {
+            "action": "block_ip",
+            "reason": "XSS Payload detected"
+        }
+    },
+    {
+        "id": "A003",
+        "name": "Path Traversal / LFI",
+        "description": "Sistem dosyalarına erişim denemesi.",
+        "risk_level": "HIGH",
+        "regex_patterns": [
+            "(\\.\\.[\\\\\\/])",
+            "(?i)(\\/etc\\/passwd)",
+            "(?i)(\\/windows\\/win.ini)",
+            "(?i)(\\/boot\\.ini)"
+        ],
+        "rule_template": {
+            "action": "block_ip",
+            "reason": "Directory Traversal attempt"
+        }
+    },
+    {
+        "id": "A004",
+        "name": "Command Injection",
+        "description": "İşletim sistemi komutu çalıştırma girişimi.",
+        "risk_level": "CRITICAL",
+        "regex_patterns": [
+            "(?i)(;\\s*ls\\s*)",
+            "(?i)(;\\s*cat\\s+)",
+            "(?i)(\\|\\s*whoami)",
+            "(?i)(\\|\\s*net user)",
+            "(?i)(\\&\\&\\s*dir)"
+        ],
+        "rule_template": {
+            "action": "block_ip",
+            "reason": "OS Command Injection detected"
+        }
+    },
+    {
+        "id": "A005",
+        "name": "Log4Shell (Legacy)",
+        "description": "Java tabanlı Log4j zafiyeti.",
+        "risk_level": "CRITICAL",
+        "regex_patterns": [
+            "(?i)(\\$\\{jndi:ldap:)",
+            "(?i)(\\$\\{jndi:rmi:)",
+            "(?i)(\\$\\{lower:)"
+        ],
+        "rule_template": {
+            "action": "block_ip",
+            "reason": "Log4Shell exploit attempt"
+        }
+    }
+]
