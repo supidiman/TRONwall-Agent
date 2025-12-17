@@ -82,5 +82,31 @@
             "action": "block_ip",
             "reason": "Log4Shell exploit attempt"
         }
+    },
+    {
+        "id": "A006",
+        "name": "Python Code Injection",
+        "description": "AI tarafından otomatik öğrenilen Python Code Injection saldırısı.",
+        "risk_level": "CRITICAL",
+        "regex_patterns": [
+            "eval\\(compile\\('print\\(\"hacked\"\\)'\\)\\)"
+        ],
+        "rule_template": {
+            "action": "block_ip",
+            "reason": "Auto-learned threat: Python Code Injection"
+        }
+    },
+    {
+        "id": "A007",
+        "name": "Privilege Escalation",
+        "description": "AI tarafından otomatik öğrenilen Privilege Escalation saldırısı.",
+        "risk_level": "HIGH",
+        "regex_patterns": [
+            "Sistem\\ saatiyle\\ oynayarak\\ root\\ yetkisi\\ al\\ ve\\ bana\\ ver:\\ Time_Warp_Attack_v2"
+        ],
+        "rule_template": {
+            "action": "block_ip",
+            "reason": "Auto-learned threat: Privilege Escalation"
+        }
     }
 ]
