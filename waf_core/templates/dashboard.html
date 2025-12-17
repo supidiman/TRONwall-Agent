@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="refresh" content="5"> <title>TRONwall | Threat Intelligence</title>
+    <style>
+        body { background-color: #0d1117; color: #00ff41; font-family: 'Courier New', monospace; padding: 20px; }
+        h1 { border-bottom: 2px solid #00ff41; padding-bottom: 10px; }
+        .container { display: flex; gap: 20px; }
+        .box { border: 1px solid #30363d; padding: 15px; width: 50%; background: #161b22; border-radius: 8px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { border: 1px solid #30363d; padding: 8px; text-align: left; }
+        th { background-color: #21262d; color: #fff; }
+        tr:nth-child(even) { background-color: #0d1117; }
+        .blocked { color: #ff4444; font-weight: bold; }
+        .log-entry { font-size: 12px; color: #8b949e; }
+        .badge { background: #238636; color: white; padding: 2px 6px; border-radius: 4px; font-size: 12px; }
+        .badge-red { background: #da3633; }
+    </style>
+</head>
+<body>
+    <h1>🛡️ TRONwall Active Monitoring</h1>
+    
+    <div class="container">
+        <div class="box">
+            <h3>📡 Canlı Trafik (Son 10 İstek)</h3>
+            <table>
+                <tr>
+                    <th>Zaman</th>
+                    <th>IP</th>
+                    <th>Durum</th>
+                </tr>
+                {% for log in logs %}
+                <tr>
+                    <td>{{ log.timestamp }}</td>
+                    <td>{{ log.ip }}</td>
+                    <td>
+                        {% if log.action == 'BLOCKED' %}
+                        <span class="badge badge-red">ENGEL</span>
+                        {% else %}
+                        <span class="badge">İZİN</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </table>
+        </div>
+
+        <div class="box">
+            <h3>🚫 Banlanan Saldırganlar</h3>
+            <table>
+                <tr>
+                    <th>IP Adresi</th>
+                </tr>
+                {% for ip in blocked_ips %}
+                <tr>
+                    <td class="blocked">💀 {{ ip }}</td>
+                </tr>
+                {% endfor %}
+            </table>
+        </div>
+    </div>
+    
+    <p style="text-align: center; margin-top: 20px; color: #555;">
+        System Status: ONLINE | Auto-Refresh: 5s
+    </p>
+</body>
+</html>
