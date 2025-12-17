@@ -1,6 +1,7 @@
 import os
 import json
 import google.generativeai as genai
+import time
 from dotenv import load_dotenv
 
 # 1. Ayarları Yükle
@@ -60,7 +61,13 @@ def analyze_log(log_entry):
         print("HATA: Model JSON döndürmedi.")
         print(response.text)
     except Exception as e:
-        print(f"Bir hata oluştu: {e}")
+        if "429" in str(e):
+            print("⚠️ API Kotası doldu! 30 saniye bekleniyor...")
+            time.sleep(30) # time modülünü import etmen gerekir
+            return analyze_log(log_entry) # Tekrar dene
+        else:
+            print(f"Bir hata oluştu: {e}")
+            return {"attack_detected": False, "error": True} # Belirsiz durum
 
 if __name__ == "__main__":
     test_log = "User input: ' OR 1=1 --"
