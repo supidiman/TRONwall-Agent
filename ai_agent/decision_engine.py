@@ -13,7 +13,6 @@ def block_ip(ip_address):
     """
     blocked_list = []
 
-    # 1. Mevcut listeyi oku
     if os.path.exists(BLACKLIST_FILE):
         try:
             with open(BLACKLIST_FILE, "r") as f:
@@ -21,16 +20,38 @@ def block_ip(ip_address):
         except (json.JSONDecodeError, ValueError):
             blocked_list = []
 
-    # 2. IP zaten listede yoksa ekle (Tekrarı önler)
     if ip_address not in blocked_list:
         blocked_list.append(ip_address)
         
-        # 3. Güncel listeyi dosyaya yaz
         with open(BLACKLIST_FILE, "w") as f:
             json.dump(blocked_list, f, indent=4)
         print(f"🚫 [İNFAZ] {ip_address} kara listeye alındı.")
     else:
         print(f"ℹ️ {ip_address} zaten kara listede.")
+
+def pre_filter(log_entry):
+    """
+    AKILLI FİLTRELEME (SMART FILTERING)
+    Basit string kontrolleri ile bariz temiz olan istekleri eler.
+    True dönerse -> AI analiz etmeli (Şüpheli veya Hata kodu)
+    False dönerse -> AI analize gerek yok (Temiz)
+    """
+    # 1. Şüpheli Karakter Kontrolü (SQLi, XSS belirtileri)
+    suspicious_chars = ["<", ">", "'", "--", "script", "union", "select"]
+    
+    for char in suspicious_chars:
+        if char in log_entry.lower(): # Küçük harfe çevirip bakmak daha güvenli
+            return True # Şüpheli karakter var, AI görsün!
+
+    # 2. HTTP Status Kontrolü
+    # Eğer log içinde " 200 " (Başarılı) varsa ve yukarıdaki şüpheli karakterler yoksa temizdir.
+    # Not: Log formatına göre status kodunun yeri değişebilir ama genelde boşluklar arasındadır.
+    if " 200 " in log_entry:
+        return False # Temiz 200 isteği, AI'a gerek yok.
+
+    # 3. Diğer Durumlar (404, 500, 403 vb.)
+    # Hata kodları bazen Fuzzing veya Brute Force belirtisi olabilir.
+    return True
 
 def start_watching():
     if not os.path.exists(LOG_FILE):
@@ -38,6 +59,7 @@ def start_watching():
             f.write("")
 
     print(f"--- TRONwall Karar Mekanizması & İnfaz Memuru Başlatıldı ---")
+    print(f"⚡ Smart Filtering (Akıllı Filtreleme) Aktif.")
     
     with open(LOG_FILE, "r") as f:
         f.seek(0, os.SEEK_END)
@@ -50,13 +72,19 @@ def start_watching():
 
             log_entry = line.strip()
             if log_entry:
-                # IP adresini ayıkla (Satırın başındaki ilk blok)
                 attacker_ip = log_entry.split(" ")[0].split("-")[0].strip()
                 
+                # --- AKILLI FİLTRELEME DEVREDE ---
+                if not pre_filter(log_entry):
+                    # Eğer temizse döngünün başına dön (AI'ı çağırma)
+                    print(f"⏩ [ATLANDI] Temiz İstek: {attacker_ip}") # Debug için açılabilir
+                    continue
+                # ---------------------------------
+
+                print(f"b[AI Analiz Ediyor...] {attacker_ip}") # Filtreyi geçenleri görelim
                 result = analyze_log(log_entry)
 
                 if result:
-                    # DÜZELTME: "block_ip" ifadesi suggested_action içinde geçiyor mu?
                     action = result.get("suggested_action", "")
                     is_attack = result.get("attack_detected", False)
 
