@@ -1,5 +1,14 @@
-.env
+# Python System
 __pycache__/
-*.log
+*.py[cod]
+.env
+
+# TRONwall Dynamic Data
+waf_core/traffic.log
 ai_agent/blocked_ips.json
+rag_memory/data/attack_signatures.json.bak
+
+# IDE & Virtual Env
+.vscode/
+.idea/
 venv/
