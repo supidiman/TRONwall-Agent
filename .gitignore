@@ -1,0 +1,5 @@
+.env
+__pycache__/
+*.log
+ai_agent/blocked_ips.json
+venv/
