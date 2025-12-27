@@ -6,7 +6,7 @@ import psutil
 
 st.sidebar.header("💻 Sistem Sağlığı")
 st.sidebar.write(f"CPU Kullanımı: %{psutil.cpu_percent()}")
-st.sidebar.write(f"RAM Kullanımı: %{psutil.virtual_memory().percent()}")
+st.sidebar.write(f"RAM Kullanımı: %{psutil.virtual_memory().percent}")
 
 st.set_page_config(page_title="TRONwall Dashboard", layout="wide")
 st.title("🛡️ TRONwall Komuta Merkezi")
