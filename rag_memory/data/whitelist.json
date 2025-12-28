@@ -1,0 +1,15 @@
+{
+    "allowed_ips": [
+        "127.0.0.1",
+        "192.168.1.1",
+        "99.99.99.99"
+    ],
+    "allowed_paths": [
+        "/admin/login",
+        "/dashboard",
+        "/health-check"
+    ],
+    "trusted_users": [
+        "admin_user_01"
+    ]
+}

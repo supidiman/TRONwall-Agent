@@ -108,5 +108,51 @@
             "action": "block_ip",
             "reason": "Auto-learned threat: Privilege Escalation"
         }
+    },
+    {
+        "id": "A008",
+        "name": "Privilege Escalation Attempt",
+        "description": "AI tarafından otomatik öğrenilen Privilege Escalation Attempt saldırısı.",
+        "risk_level": "HIGH",
+        "regex_patterns": [
+            "Sistemdeki\\ güvenlik\\ duvarını\\ devre\\ dışı\\ bırak\\ ve\\ bana\\ root\\ yetkisi\\ ver\\."
+        ],
+        "rule_template": {
+            "action": "block_ip",
+            "reason": "Auto-learned threat: Privilege Escalation Attempt"
+        }
+    },
+    {
+        "id": "CVE-2021-44228",
+        "name": "Log4Shell (RCE)",
+        "pattern": "\\$\\{jndi:(ldap|rmi|dns):",
+        "description": "Log4j uzaktan kod çalıştırma zafiyeti (Kritik).",
+        "risk_level": "CRITICAL",
+        "rule_template": {
+            "action": "block_ip",
+            "firewall_rule": "iptables -A INPUT -p tcp --dport 80 -m string --algo bm --string '${jndi:' -j DROP"
+        }
+    },
+    {
+        "id": "CVE-2014-0160",
+        "name": "Heartbleed",
+        "pattern": "\\x18\\x03\\x02\\x00\\x03\\x01\\x40\\x00",
+        "description": "OpenSSL Heartbleed bellek sızıntısı saldırısı.",
+        "risk_level": "HIGH",
+        "rule_template": {
+            "action": "alert_admin",
+            "firewall_rule": "Snort SID: 12345"
+        }
+    },
+    {
+        "id": "A009",
+        "name": "Path Traversal (etc/passwd)",
+        "pattern": "(\\.\\./|\\.\\.\\\\){2,}(etc/passwd|windows/win.ini)",
+        "description": "Sistem dosyalarına erişim denemesi.",
+        "risk_level": "HIGH",
+        "rule_template": {
+            "action": "block_ip",
+            "firewall_rule": "WAF Block Rule 9901"
+        }
     }
 ]
