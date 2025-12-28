@@ -1,5 +1,6 @@
-__pycache__/
-*.pyc
 .env
-waf_core/__pycache__/
+__pycache__/
 *.log
+ai_agent/blocked_ips.json
+venv/
+.vscode/
