@@ -154,5 +154,44 @@
             "action": "block_ip",
             "firewall_rule": "WAF Block Rule 9901"
         }
+    },
+    {
+        "id": "A010",
+        "name": "Command Injection Reconnaissance",
+        "description": "AI tarafından otomatik öğrenilen Command Injection Reconnaissance saldırısı.",
+        "risk_level": "HIGH",
+        "regex_patterns": [
+            "\\{\"timestamp\":\\ \"2026\\-01\\-01\\ 13:57:28\",\\ \"ip\":\\ \"127\\.0\\.0\\.1\",\\ \"url\":\\ \"http://127\\.0\\.0\\.1:5000/cmd\",\\ \"method\":\\ \"GET\",\\ \"user_agent\":\\ \"Mozilla/5\\.0\\ \\(Windows\\ NT\\ 10\\.0\\)\\ AppleWebKit/537\\.36\\ \\(KHTML,\\ like\\ Gecko\\)\\ Chrome/91\\.0\\.4472\\.124\\ Safari/537\\.36\",\\ \"payload\":\\ null,\\ \"action\":\\ \"ALLOWED\"\\}"
+        ],
+        "rule_template": {
+            "action": "block_ip",
+            "reason": "Auto-learned threat: Command Injection Reconnaissance"
+        }
+    },
+    {
+        "id": "A011",
+        "name": "Command Injection Probe",
+        "description": "AI tarafından otomatik öğrenilen Command Injection Probe saldırısı.",
+        "risk_level": "HIGH",
+        "regex_patterns": [
+            "\\{\"timestamp\":\\ \"2026\\-01\\-01\\ 13:57:32\",\\ \"ip\":\\ \"127\\.0\\.0\\.1\",\\ \"url\":\\ \"http://127\\.0\\.0\\.1:5000/cmd\",\\ \"method\":\\ \"GET\",\\ \"user_agent\":\\ \"Mozilla/5\\.0\\ \\(Windows\\ NT\\ 10\\.0\\)\\ AppleWebKit/537\\.36\\ \\(KHTML,\\ like\\ Gecko\\)\\ Chrome/91\\.0\\.4472\\.124\\ Safari/537\\.36\",\\ \"payload\":\\ null,\\ \"action\":\\ \"ALLOWED\"\\}"
+        ],
+        "rule_template": {
+            "action": "block_ip",
+            "reason": "Auto-learned threat: Command Injection Probe"
+        }
+    },
+    {
+        "id": "A012",
+        "name": "Log4Shell RCE",
+        "description": "AI tarafından otomatik öğrenilen Log4Shell RCE saldırısı.",
+        "risk_level": "CRITICAL",
+        "regex_patterns": [
+            "\\$\\{jndi:ldap\\}"
+        ],
+        "rule_template": {
+            "action": "block_ip",
+            "reason": "Auto-learned threat: Log4Shell RCE"
+        }
     }
 ]

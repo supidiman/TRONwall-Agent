@@ -23,23 +23,23 @@ class WhitelistManager:
         """Verileri dosyaya kaydeder."""
         with open(self.file_path, 'w', encoding='utf-8') as f:
             json.dump(self.data, f, indent=4)
-        print("✅ Whitelist güncellendi.")
+        print("Whitelist güncellendi.")
 
     def add_ip(self, ip_address):
         """Güvenli bir IP ekler."""
         if ip_address not in self.data["allowed_ips"]:
             self.data["allowed_ips"].append(ip_address)
             self._save_whitelist()
-            print(f"🛡️ IP Eklendi: {ip_address}")
+            print(f" IP Eklendi: {ip_address}")
         else:
-            print(f"ℹ️ Bu IP zaten listede: {ip_address}")
+            print(f"Bu IP zaten listede: {ip_address}")
 
     def add_path(self, path):
         """Güvenli bir URL yolu ekler."""
         if path not in self.data["allowed_paths"]:
             self.data["allowed_paths"].append(path)
             self._save_whitelist()
-            print(f"🛡️ Yol Eklendi: {path}")
+            print(f"Yol Eklendi: {path}")
 
     def is_whitelisted(self, log_entry):
         """

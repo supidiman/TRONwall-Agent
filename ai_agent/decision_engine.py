@@ -25,9 +25,9 @@ def block_ip(ip_address):
         
         with open(BLACKLIST_FILE, "w") as f:
             json.dump(blocked_list, f, indent=4)
-        print(f"🚫 [İNFAZ] {ip_address} kara listeye alındı.")
+        print(f"[İNFAZ] {ip_address} kara listeye alındı.")
     else:
-        print(f"ℹ️ {ip_address} zaten kara listede.")
+        print(f" {ip_address} zaten kara listede.")
 
 def pre_filter(log_entry):
     """
@@ -59,7 +59,7 @@ def start_watching():
             f.write("")
 
     print(f"--- TRONwall Karar Mekanizması & İnfaz Memuru Başlatıldı ---")
-    print(f"⚡ Smart Filtering (Akıllı Filtreleme) Aktif.")
+    print(f"Smart Filtering (Akıllı Filtreleme) Aktif.")
     
     with open(LOG_FILE, "r") as f:
         f.seek(0, os.SEEK_END)
@@ -77,7 +77,7 @@ def start_watching():
                 # --- AKILLI FİLTRELEME DEVREDE ---
                 if not pre_filter(log_entry):
                     # Eğer temizse döngünün başına dön (AI'ı çağırma)
-                    print(f"⏩ [ATLANDI] Temiz İstek: {attacker_ip}") # Debug için açılabilir
+                    print(f" [ATLANDI] Temiz İstek: {attacker_ip}") # Debug için açılabilir
                     continue
                 # ---------------------------------
 
@@ -89,10 +89,10 @@ def start_watching():
                     is_attack = result.get("attack_detected", False)
 
                     if is_attack and "block_ip" in action:
-                        print(f"⚠️ KRİTİK: {result.get('attack_type')} tespit edildi!")
+                        print(f" KRİTİK: {result.get('attack_type')} tespit edildi!")
                         block_ip(attacker_ip)
                     else:
-                        print(f"✅ Analiz tamamlandı: {result.get('attack_type', 'Temiz')}")
+                        print(f"Analiz tamamlandı: {result.get('attack_type', 'Temiz')}")
 
 if __name__ == "__main__":
     try:

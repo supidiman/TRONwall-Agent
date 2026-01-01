@@ -1,3 +1,8 @@
+flask
 google-generativeai
 python-dotenv
 requests
+psutil
+pandas
+streamlit
+locust 

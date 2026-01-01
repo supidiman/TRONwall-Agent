@@ -77,7 +77,7 @@ def analyze_log(log_entry, retry_count=0):
     if whitelist:
         is_safe, reason = whitelist.is_whitelisted(log_entry)
         if is_safe:
-            print(f"🛡️ WHITELIST: Güvenli olarak işaretlendi. ({reason})")
+            print(f" WHITELIST: Güvenli olarak işaretlendi. ({reason})")
             return {
                 "attack_detected": False,
                 "attack_type": "None",
@@ -85,7 +85,7 @@ def analyze_log(log_entry, retry_count=0):
                 "suggested_action": "allow",
                 "explanation": f"Yönetici tarafından beyaz listeye alınmış: {reason}"
             }
-            
+
     # --- ADIM 1: HAFIZA KONTROLÜ (RAG) ---
     if kb:
         matches = kb.search_knowledge(log_entry)

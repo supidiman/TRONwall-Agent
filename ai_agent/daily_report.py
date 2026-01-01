@@ -90,7 +90,7 @@ if __name__ == "__main__":
     with open(REPORT_FILE, "w", encoding="utf-8") as f:
         f.write(summary)
 
-    print("📊 Günlük Executive Summary oluşturuldu:")
+    print(" Günlük Executive Summary oluşturuldu:")
     print("-" * 40)
     print(summary)
     print("-" * 40)
