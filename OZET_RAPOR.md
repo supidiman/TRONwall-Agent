@@ -194,3 +194,4 @@ Gelecekte Aynı Saldırı Hızlıca Tespit Edilir
 - `PROJE_ANALIZ_RAPORU.md` - Tam detaylı analiz
 - `SISTEM_MIMARISI.md` - Mimari şemalar ve diyagramlar
 
+

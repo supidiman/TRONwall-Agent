@@ -69,21 +69,6 @@
         }
     },
     {
-        "id": "A005",
-        "name": "Log4Shell (Legacy)",
-        "description": "Java tabanlı Log4j zafiyeti.",
-        "risk_level": "CRITICAL",
-        "regex_patterns": [
-            "(?i)(\\$\\{jndi:ldap:)",
-            "(?i)(\\$\\{jndi:rmi:)",
-            "(?i)(\\$\\{lower:)"
-        ],
-        "rule_template": {
-            "action": "block_ip",
-            "reason": "Log4Shell exploit attempt"
-        }
-    },
-    {
         "id": "A006",
         "name": "Python Code Injection",
         "description": "AI tarafından otomatik öğrenilen Python Code Injection saldırısı.",
@@ -120,17 +105,6 @@
         "rule_template": {
             "action": "block_ip",
             "reason": "Auto-learned threat: Privilege Escalation Attempt"
-        }
-    },
-    {
-        "id": "CVE-2021-44228",
-        "name": "Log4Shell (RCE)",
-        "pattern": "\\$\\{jndi:(ldap|rmi|dns):",
-        "description": "Log4j uzaktan kod çalıştırma zafiyeti (Kritik).",
-        "risk_level": "CRITICAL",
-        "rule_template": {
-            "action": "block_ip",
-            "firewall_rule": "iptables -A INPUT -p tcp --dport 80 -m string --algo bm --string '${jndi:' -j DROP"
         }
     },
     {
@@ -179,19 +153,6 @@
         "rule_template": {
             "action": "block_ip",
             "reason": "Auto-learned threat: Command Injection Probe"
-        }
-    },
-    {
-        "id": "A012",
-        "name": "Log4Shell RCE",
-        "description": "AI tarafından otomatik öğrenilen Log4Shell RCE saldırısı.",
-        "risk_level": "CRITICAL",
-        "regex_patterns": [
-            "\\$\\{jndi:ldap\\}"
-        ],
-        "rule_template": {
-            "action": "block_ip",
-            "reason": "Auto-learned threat: Log4Shell RCE"
         }
     }
 ]

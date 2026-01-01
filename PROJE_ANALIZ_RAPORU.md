@@ -515,3 +515,4 @@ Sistem, küçük ve orta ölçekli web uygulamaları için ideal bir güvenlik �
 **Versiyon:** 1.0  
 **Hazırlayan:** AI Analiz Sistemi
 
+

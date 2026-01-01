@@ -1,43 +1,95 @@
-from flask import Flask, request, render_template, abort
+from flask import Flask, request, render_template, abort, jsonify
 import json
 import os
-# Kendi modüllerini koruyoruz
-from middleware import request_parser, log_transaction 
-from blocker import is_blocked
+
+# --- SENİN MODÜLLERİN (Mevcut yapıyı koruyoruz) ---
+try:
+    from middleware import request_parser, log_transaction 
+    from blocker import is_blocked
+except ImportError:
+    # Eğer test yaparken modüller yoksa hata vermesin diye (Geliştirme amaçlı)
+    def request_parser(req): return {"ip": req.remote_addr, "url": req.url, "method": req.method, "payload": str(req.args)}
+    def log_transaction(data, action): print(f"LOG: {action} - {data}")
+    def is_blocked(ip): return False
 
 app = Flask(__name__)
 
 # --- YAPILANDIRMA ---
 LOG_FILE = "traffic.log"
-# Yolu senin yapına uygun şekilde ayarladım
-BLACKLIST_FILE = os.path.join(os.path.dirname(__file__), "..", "ai_agent", "blocked_ips.json")
 
-# --- 1. YENİ ÖZELLİK: PROAKTİF İMZA LİSTESİ ---
-# Bu kelimeler geçerse, IP temiz olsa bile WAF anında engeller.
-CRITICAL_SIGNATURES = [
-    "UNION SELECT", "OR '1'='1", "WAITFOR DELAY",  # SQLi
-    "<script>", "alert(", "onerror=", "javascript:", # XSS
-    "../", "etc/passwd", "boot.ini", "cat /",       # LFI/RCE
-    "ping ", "whoami", "system(", "wget ", "curl "  # Komut Enjeksiyonu
-]
+# Dosya Yolları (waf_core klasörünün bir üstüne çıkıp ai_agent'a gider)
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+SIGNATURES_FILE = os.path.join(BASE_DIR, "ai_agent", "attack_signatures.json")
+WHITELIST_FILE = os.path.join(BASE_DIR, "ai_agent", "whitelist.json")
+BLACKLIST_FILE = os.path.join(BASE_DIR, "ai_agent", "blocked_ips.json")
 
-# --- 2. YENİ ÖZELLİK: İÇERİK TARAMA FONKSİYONU ---
+
+# --- EKSİK OLAN FONKSİYONLAR (BURALARI EKLEDİM) ---
+
+def load_attack_signatures():
+    """
+    RAG hafızasındaki (JSON) saldırı imzalarını yükler.
+    Her istekte çağrıldığı için veritabanı güncellemelerini anlık görür.
+    """
+    signatures = []
+    # Varsayılanlar (Dosya okunamazsa güvenlik açığı olmasın diye)
+    defaults = ["UNION SELECT", "<script>", "alert(", "etc/passwd", "jndi:ldap"]
+    signatures.extend(defaults)
+
+    if os.path.exists(SIGNATURES_FILE):
+        try:
+            with open(SIGNATURES_FILE, "r", encoding="utf-8") as f:
+                data = json.load(f)
+                for item in data:
+                    # 1. Regex listesini al
+                    patterns = item.get("regex_patterns", [])
+                    
+                    # 2. Veya tekil pattern varsa onu al
+                    if item.get("pattern"):
+                        patterns.append(item.get("pattern"))
+                    
+                    # Listeye ekle
+                    signatures.extend(patterns)
+        except Exception as e:
+            print(f"Hata - İmzalar yüklenemedi: {e}")
+            
+    return signatures
+
+def load_whitelist():
+    """Whitelist dosyasını yükler"""
+    if os.path.exists(WHITELIST_FILE):
+        try:
+            with open(WHITELIST_FILE, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except: pass
+    return {"allowed_ips": [], "allowed_paths": []}
+
+# --- İÇERİK TARAMA FONKSİYONU ---
+
 def check_payload_for_attack(parsed_data):
     """
-    request_parser'dan gelen veriyi string'e çevirip
-    içinde zararlı imza var mı diye bakar.
+    Her istekte JSON dosyasını yeniden okur.
+    Böylece Dashboard'dan eklenen kural ANINDA geçerli olur.
     """
-    # Veriyi komple stringe çevirip küçük harf yapalım (büyük/küçük harf kaçmasın)
+    # 1. İmzaları Taze Yükle (ARTIK BU FONKSİYON TANIMLI, HATA VERMEZ)
+    current_signatures = load_attack_signatures() 
+    
+    # Veriyi string'e çevir
     data_str = str(parsed_data).lower()
     
-    for sig in CRITICAL_SIGNATURES:
-        if sig.lower() in data_str:
-            print(f"🛡️ TEHDİT YAKALANDI: {sig}") # Konsolda görelim
-            return True, sig # Yakalandı ve Hangi imza
+    for sig in current_signatures:
+        # Basit string temizliği (Regex karakterlerini temizle)
+        clean_sig = sig.replace("\\", "").replace("(?i)", "").lower()
+        
+        # Çok kısa kelimeleri (örn: "a") yoksay, hatalı pozitif olmasın
+        if len(clean_sig) > 3 and clean_sig in data_str:
+            print(f"🛡️ TEHDİT YAKALANDI: {sig}")
+            return True, sig
             
     return False, None
 
-# --- MEVCUT YARDIMCI FONKSİYONLARIN (Log Okuma vs) ---
+
+# --- YARDIMCI FONKSİYONLAR ---
 def get_recent_logs():
     logs = []
     if os.path.exists(LOG_FILE):
@@ -54,55 +106,51 @@ def get_recent_logs():
 
 def get_blocked_list():
     blocked = []
-    path = BLACKLIST_FILE
-    # Yol hatası almamak için kontrol
-    if not os.path.exists(path):
-        # Eğer server.py bir alt klasördeyse (waf_core gibi) bir üstü dene
-        path = "ai_agent/blocked_ips.json"
-        
-    if os.path.exists(path):
+    if os.path.exists(BLACKLIST_FILE):
         try:
-            with open(path, "r") as f:
+            with open(BLACKLIST_FILE, "r") as f:
                 data = json.load(f)
                 if isinstance(data, dict): blocked = data.get("blocked_ips", [])
                 elif isinstance(data, list): blocked = data
         except: pass
     return blocked
 
-# --- 3. GÜNCELLENMİŞ GÜVENLİK DUVARI (MIDDLEWARE) ---
+
+# --- GÜVENLİK DUVARI (MIDDLEWARE) ---
 @app.before_request
 def security_check():
     """
     Her istekten ÖNCE çalışır.
-    Hem IP hem de İÇERİK kontrolü yapar.
+    Sıralama: Whitelist -> IP Ban -> İçerik Tarama (Payload)
     """
-    if request.path.startswith('/static'):
-        return None
+    # Statik dosyaları atla
+    if request.path.startswith('/static'): return None
 
-    # 1. İsteği Parse Et (Senin middleware modülün)
+    # 1. ADIM: Whitelist Kontrolü (Güvenli ise direkt geçsin)
+    whitelist = load_whitelist()
+    client_ip = request.remote_addr
+    
+    if client_ip in whitelist.get("allowed_ips", []) or request.path in whitelist.get("allowed_paths", []):
+        # Whitelist ise engelleme yapma
+        return None 
+
+    # İsteği Parse Et
     data = request_parser(request)
     
-    # 2. KONTROL: IP Yasaklı mı? (Senin blocker modülün)
+    # 2. ADIM: IP Yasaklı mı? (blocker.py)
     if is_blocked(data['ip']):
-        # Loga 'BLOCKED' olarak işle
         log_transaction(data, "BLOCKED")
         return "🚫 ERİŞİM ENGELLENDİ (IP BAN) - TRONwall AI Security", 403
 
-    # 3. KONTROL (YENİ): Paket İçeriği Temiz mi?
+    # 3. ADIM: Paket İçeriği Temiz mi? (RAG/AI Kontrolü)
     is_attack, signature = check_payload_for_attack(data)
     
     if is_attack:
-        # IP temiz olsa bile içerik kirli! ANINDA ENGELLE.
-        # Loga saldırı detayını ekleyelim (Middleware destekliyorsa)
-        # Desteklemiyorsa direkt BLOCKED olarak göndeririz.
         print(f"⚔️ PROAKTİF SAVUNMA: {signature} içeren paket engellendi!")
-        
-        # Log dosyasına saldırı olarak işle
         log_transaction(data, "BLOCKED")
-        
         return f"🚫 ERİŞİM ENGELLENDİ (ZARARLI İÇERİK: {signature}) - TRONwall WAF", 403
 
-    # 4. TEMİZ: Yasaklı değil ve içerik temizse izin ver
+    # 4. ADIM: Temiz
     log_transaction(data, "ALLOWED")
 
 # ---------------------------------------------------
@@ -113,42 +161,33 @@ def home():
 
 @app.route('/dashboard')
 def dashboard():
-    # Flask dashboard'un (Eğer Streamlit kullanıyorsan burası opsiyoneldir)
     logs = get_recent_logs()
     blocked_ips = get_blocked_list()
     return render_template('dashboard.html', logs=logs, blocked_ips=blocked_ips)
 
 # Test Rotaları
 @app.route('/login', methods=['GET', 'POST'])
-def login():
-    return "Login Sayfası"
+def login(): return "Login Sayfası"
 
 @app.route('/search', methods=['GET'])
-def search():
-    return "Arama Sonuçları..."
+def search(): return "Arama Sonuçları..."
 
 @app.route('/images', methods=['GET'])
-def images():
-    return "Resim Görüntüleyici"
+def images(): return "Resim Görüntüleyici"
 
 @app.route('/cmd', methods=['GET'])
-def cmd():
-    return "Komut Paneli"
+def cmd(): return "Komut Paneli"
 
 @app.route('/download', methods=['GET'])
-def download():
-    return "İndirme Paneli"
+def download(): return "İndirme Paneli"
     
 @app.route('/view', methods=['GET'])
-def view():
-    return "Görüntüleme Paneli"
+def view(): return "Görüntüleme Paneli"
     
 @app.route('/comment', methods=['GET', 'POST'])
-def comment():
-    return "Yorum Paneli"
+def comment(): return "Yorum Paneli"
 
 if __name__ == '__main__':
-    # Log dosyasını başlat
     if not os.path.exists(LOG_FILE): open(LOG_FILE, 'w').close()
     print("🔥 TRONwall Server (Proaktif Mod) Başlatıldı...")
     app.run(host='0.0.0.0', port=5000, debug=False)
